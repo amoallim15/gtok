@@ -69,6 +69,7 @@ class NoPEGRules:
         if check in " \n\r\f\t":
             tb.len = 1
             tb.value = check
+            tb.ignore = True
             return True
 
     def error(ctx, tb):

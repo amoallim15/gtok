@@ -31,7 +31,8 @@ class Context:
     def consume(self, tb):
         self.__pos = max(self.pos, tb.pos + tb.len + tb.padding)
         # TODO: extendable..
-        return tb.build()
+        if not tb.ignore:
+            return tb.build()
 
     def __repr__(self):
         return f"Context({self.__data}, {self.__pos}, {self.__len})"
@@ -43,6 +44,7 @@ class TokenBuilder:
         self.pos = kwargs.get("pos", 0)
         self.len = kwargs.get("len", 0)
         self.value = kwargs.get("value", "")
+        self.ignore = False
         self.type = kwargs.get("type", None)
         self.matcher = kwargs.get("matcher", None)
 
@@ -106,7 +108,9 @@ class Tokenizer:
             if len(matches) > 0:
                 _, _, tb = heapq.heappop(matches)
                 token = self.ctx.consume(tb)
-                yield token
+                if token:
+                    yield token
+                continue
             else:
                 if inspect.isroutine(self.err_handler):
                     tb = TokenBuilder(

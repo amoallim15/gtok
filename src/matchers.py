@@ -15,14 +15,14 @@ def regex(restr):
             m = restr.match(ctx.data, ctx.pos)
             if not m:
                 tb.len, tb.value, tb.type = 0, "", None
+                func(ctx, tb)
             else:
                 tb.value = m.group()
                 tb.pos = m.end()
                 tb.len = tb.pos - ctx.pos
                 tb.matcher = m
-            #
-            return func(ctx, tb)
-            #
+                func(ctx, tb)
+                return True
 
         return wrapper
 

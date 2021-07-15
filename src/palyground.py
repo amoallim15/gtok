@@ -5,9 +5,8 @@ from matchers import regex
 class NoPEGRules:
     @regex(r"->")
     def _and(ctx, tb):
-        # TODO: check decorator | return infinity loop error.
-        if tb.matcher:
-            return True
+        # TODO: check (decorator | return) infinity loop error.
+        pass
 
     def _or(ctx, tb):
         check = ctx.data[ctx.pos : ctx.pos + 2]
@@ -39,9 +38,8 @@ class NoPEGRules:
 
     @regex(r"[a-z]")
     def _variable(ctx, tb):
-        # TODO: check decorator | return infinity loop error.
-        if tb.matcher:
-            return True
+        # TODO: check (decorator | return) infinity loop error.
+        pass
         # values = "abcdefghijklmnopqrstuvwxyz"
         # check = ctx.data[ctx.pos : ctx.pos + 1]
         # if check in values:

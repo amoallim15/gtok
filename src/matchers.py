@@ -9,6 +9,8 @@ def regex(restr):
         @wraps(func)
         def wrapper(ctx, tb):
             #
+            if not isinstance(ctx.data, str):
+                raise TypeError("Regex matcher works only on Iterable of str type.")
             tb.pos, tb.padding = ctx.pos, 0
             m = restr.match(ctx.data, ctx.pos)
             if not m:

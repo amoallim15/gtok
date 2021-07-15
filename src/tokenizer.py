@@ -93,7 +93,7 @@ class Tokenizer:
             raise ValueError(f'Input is not of type Iterable error. \n"{data}"')
         self.ctx.overwrite(data)
 
-    def token(self):
+    def tokens(self):
         while self.ctx.pos < self.ctx.len:
             matches = []
             for rule in self.rules:

@@ -1,31 +1,12 @@
 from tokenizer import Tokenizer
-
-"""
-Ordered PEG:
-exp := a -> b       # (a and b)     [sequence]
-exp := a -| b       # (a or b)      [alternative]
-exp := a -^ b       # (a if not b)  [conditional]
-# 
-exp := > -> a       # (skip and a)  [jump]
-exp := > -| a       # (skip or a)   [optional]
-exp := > -^ a       # (skip if predicate a) [constrained skip]
-# 
-exp := > -> a <     # (skip and a {n} times) [repition]
-exp := > -| a <     # (skip or a {n} times) [zero or more]
-exp := > -^ a <     # (skip if predicate a {n} times) [skip if predicate repeated a]
-# 
-exp := a -> a <     # (a and a {n} times) [one or more greedy]
-exp := a -| a <     # (a or a {n} times) [one or more non greedy]
-exp := a -^ a <     # (a if predicate a {n} times) [match if only once]
-"""
+from matchers import regex
 
 
 class NoPEGRules:
+    @regex(r"->")
     def _and(ctx, tb):
-        check = ctx.data[ctx.pos : ctx.pos + 2]
-        if check == "->":
-            tb.len = 2
-            tb.value = "->"
+        # TODO: check decorator | return infinity loop error.
+        if tb.matcher:
             return True
 
     def _or(ctx, tb):
@@ -56,13 +37,17 @@ class NoPEGRules:
             tb.value = "<"
             return True
 
+    @regex(r"[a-z]")
     def _variable(ctx, tb):
-        values = "abcdefghijklmnopqrstuvwxyz"
-        check = ctx.data[ctx.pos : ctx.pos + 1]
-        if check in values:
-            tb.len = 1
-            tb.value = check
+        # TODO: check decorator | return infinity loop error.
+        if tb.matcher:
             return True
+        # values = "abcdefghijklmnopqrstuvwxyz"
+        # check = ctx.data[ctx.pos : ctx.pos + 1]
+        # if check in values:
+        #     tb.len = 1
+        #     tb.value = check
+        #     return True
 
     def _ignore(ctx, tb):
         check = ctx.data[ctx.pos : ctx.pos + 1]
@@ -86,12 +71,12 @@ for token in tok.tokens():
 
 print()
 
-tok.input("b := a -| a<")
-for token in tok.tokens():
-    print(token)
+# tok.input("b := a -| a<")
+# for token in tok.tokens():
+#     print(token)
 
-print()
+# print()
 
-tok.input("b := a -^ a")
-for token in tok.tokens():
-    print(token)
+# tok.input("b := a -^ a")
+# for token in tok.tokens():
+#     print(token)

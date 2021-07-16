@@ -32,24 +32,24 @@ class GrammarRules:
     version_flag = ["-v", "--version"]
     help_flag = ["-h", "--help"]
     list_flag = ["-l", "--list"]
+    app_flags = [version_flag, help_flag, list_flag, True]
     #
     kwarg_type_2 = (arg_key_eq, "=", arg_value)
     kwarg_type_1 = [(arg_key_flag, arg_value), arg_key_flag]
     kwarg = [kwarg_type_1, kwarg_type_2]
-    func_type_1 = (identifier, ["-a", "--args"], _LOOP_, arg_value)
-    func_type_2 = (identifier, arg_value)
-    func_type_3 = (identifier, _LOOP_, kwarg)
+    #
     func_type_4 = identifier
+    func_type_3 = (identifier, _LOOP_, kwarg)
+    func_type_2 = (identifier, arg_value)
+    func_type_1 = (identifier, ["-a", "--args"], _LOOP_, arg_value)
     function = [func_type_1, func_type_2, func_type_3, func_type_4]
     functions = [function, _LOOP_, function]
     paths = [_LOOP_, path, True]
-    app_flags = [version_flag, help_flag, list_flag, True]
+    execute_command = (paths, functions)
     describe_command = ("desc", path)
-    execute_command = (paths, functions)
-    #
     commands = [describe_command, execute_command]
+    # 
     start = ("SOF", "supp", app_flags, [commands, "EOF"])
-    execute_command = (paths, functions)
 
 
 print(GrammarRules.start)

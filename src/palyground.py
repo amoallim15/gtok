@@ -32,8 +32,8 @@ class NoPEGRules:
             tb.type = "PAREN_END"
         pass
 
-    @regex(r"[a-z]")
-    def _variable(ctx, tb):
+    @regex(r"[a-z]+")
+    def _identifier(ctx, tb):
         # TODO: check (decorator | return) infinity loop error.
         pass
         # values = "abcdefghijklmnopqrstuvwxyz"
@@ -42,6 +42,10 @@ class NoPEGRules:
         #     tb.len = 1
         #     tb.value = check
         #     return True
+
+    @regex(r"[A-Z]+")
+    def _token(ctx, tb):
+        pass
 
     @regex(r"[\s\n\r\f\t]")
     def _ignore(ctx, tb):
@@ -55,7 +59,7 @@ class NoPEGRules:
 
 
 tok = Tokenizer(module=NoPEGRules)
-tok.input("a := (a -> c<) -| b")
+tok.input("a := (a -> CC<) -| b")
 for token in tok.tokens():
     print(token)
 

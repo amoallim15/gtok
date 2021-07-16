@@ -8,33 +8,29 @@ class NoPEGRules:
         # TODO: check (decorator | return) infinity loop error.
         pass
 
+    @regex(r"-\|")
     def _or(ctx, tb):
-        check = ctx.data[ctx.pos : ctx.pos + 2]
-        if check == "-|":
-            tb.len = 2
-            tb.value = "-|"
-            return True
+        pass
 
+    @regex(r"-\^")
     def _predicate(ctx, tb):
-        check = ctx.data[ctx.pos : ctx.pos + 2]
-        if check == "-^":
-            tb.len = 2
-            tb.value = "-^"
-            return True
+        pass
 
+    @regex(r":=")
     def _is(ctx, tb):
-        check = ctx.data[ctx.pos : ctx.pos + 2]
-        if check == ":=":
-            tb.len = 2
-            tb.value = ":="
-            return True
+        pass
 
+    @regex(r"<")
     def _more(ctx, tb):
-        check = ctx.data[ctx.pos : ctx.pos + 1]
-        if check == "<":
-            tb.len = 1
-            tb.value = "<"
-            return True
+        pass
+
+    @regex(r"[()]")
+    def _paren(ctx, tb):
+        if tb.value == "(":
+            tb.type = "PAREN_START"
+        if tb.value == ")":
+            tb.type = "PAREN_END"
+        pass
 
     @regex(r"[a-z]")
     def _variable(ctx, tb):
@@ -47,13 +43,9 @@ class NoPEGRules:
         #     tb.value = check
         #     return True
 
+    @regex(r"[\s\n\r\f\t]")
     def _ignore(ctx, tb):
-        check = ctx.data[ctx.pos : ctx.pos + 1]
-        if check in " \n\r\f\t":
-            tb.len = 1
-            tb.value = check
-            tb.ignore = True
-            return True
+        tb.ignore = True
 
     def error(ctx, tb):
         return True
@@ -63,7 +55,7 @@ class NoPEGRules:
 
 
 tok = Tokenizer(module=NoPEGRules)
-tok.input("a := a -> a<")
+tok.input("a := (a -> c<) -| b")
 for token in tok.tokens():
     print(token)
 

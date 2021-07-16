@@ -18,8 +18,8 @@ def regex(restr):
                 func(ctx, tb)
             else:
                 tb.value = m.group()
-                tb.pos = m.end()
-                tb.len = tb.pos - ctx.pos
+                tb.pos = m.start()
+                tb.len = m.end() - ctx.pos
                 tb.matcher = m
                 func(ctx, tb)
                 return True

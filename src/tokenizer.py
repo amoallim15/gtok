@@ -1,6 +1,8 @@
 import inspect
 from collections.abc import Iterable
 import heapq
+import re
+from functools import wraps
 
 
 class TokenizerError(Exception):
@@ -30,7 +32,6 @@ class Context:
 
     def consume(self, tb):
         self.__pos = max(self.pos, tb.pos + tb.len + tb.padding)
-        # TODO: extendable..
         if not tb.ignore:
             return tb.build()
 
@@ -66,11 +67,38 @@ class Rule:
         return f"Rule({self.name}, {self.token}, {self.priority}, {self.action})"
 
 
+def regex(restr):
+    restr = re.compile(restr)
+
+    def decorator(func):
+        @wraps(func)
+        def wrapper(ctx, tb):
+            #
+            if not isinstance(ctx.data, str):
+                raise TypeError("Regex matcher works on Iterable of str type only.")
+            tb.pos, tb.padding = ctx.pos, 0
+            m = restr.match(ctx.data, ctx.pos)
+            if not m:
+                tb.len, tb.value, tb.type = 0, "", None
+                func(ctx, tb)
+            else:
+                tb.value = m.group()
+                tb.pos = m.start()
+                tb.len = m.end() - m.start()
+                tb.matcher = m
+                func(ctx, tb)
+                return True
+
+        return wrapper
+
+    return decorator
+
+
 class Tokenizer:
     helpers = ["error", "eof"]
 
-    def __init__(self, module=None):
-        self.ctx = Context()
+    def __init__(self, module=None, context=Context):
+        self.ctx = context()
         self.err_rule = None
         self.eof_rule = None
         self.rules = None

@@ -19,7 +19,7 @@ def regex(restr):
             else:
                 tb.value = m.group()
                 tb.pos = m.start()
-                tb.len = m.end() - ctx.pos
+                tb.len = m.end() - m.start()
                 tb.matcher = m
                 func(ctx, tb)
                 return True

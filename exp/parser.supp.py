@@ -13,11 +13,7 @@ def _LOOP_():
     pass  # repition operator
 
 
-def _PASS_():
-    pass  # skip operator
-
-
-def _TOKEN_():
+def _ACT_():
     pass  # custom operator
 
 
@@ -32,9 +28,8 @@ class GrammarRules:
     version_flag = ["-v", "--version"]
     help_flag = ["-h", "--help"]
     list_flag = ["-l", "--list"]
-    app_flags = [version_flag, help_flag, list_flag, True]
     #
-    kwarg_type_2 = (arg_key_eq, "=", arg_value)
+    kwarg_type_2 = arg_key_eq
     kwarg_type_1 = [(arg_key_flag, arg_value), arg_key_flag]
     kwarg = [kwarg_type_1, kwarg_type_2]
     #
@@ -48,8 +43,9 @@ class GrammarRules:
     execute_command = (paths, functions)
     describe_command = ("desc", path)
     commands = [describe_command, execute_command]
+    app_flags = [version_flag, help_flag, list_flag, True]
     # 
-    start = ("SOF", "supp", app_flags, [commands, "EOF"])
+    start = ("SOF", "supp", [app_flags, commands], "EOF")
 
 
 print(GrammarRules.start)

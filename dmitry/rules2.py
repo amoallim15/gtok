@@ -1,53 +1,47 @@
-from matchers import regex, custom_1
+from matchers import regex
 
 
 class TestRules:
     @regex(r"[a-z]+")
-    def identifier(ctx, m):
-        predicate, token = m
-        if not predicate:
-            return False, None
-        return True, (token[0], "IDENTIFIER", token[2])
+    def identifier(ctx, tresult):
+        if tresult.value:
+            tresult.token = (tresult.value, "IDENTIFIER", tresult.start)
+            return tresult
 
     @regex(r"[1-9]+")
-    def numeric(ctx, m):
-        predicate, token = m
-        if not predicate:
-            return False, None
-        return True, (int(token[0]), "NUMERIC", token[2])
+    def numeric(ctx, tresult):
+        if tresult.value:
+            tresult.token = (tresult.value, "NUMERIC", tresult.start)
+            return tresult
 
     @regex(r"[()]")
-    def paren(ctx, m):
-        predicate, token = m
-        if not predicate:
-            return False, None
-        if token[0] == "(":
-            _type = "RIGHT_PAREN"
-        elif token[0] == ")":
-            _type = "RIGHT_PAREND"
-        return True, (token[0], _type, token[2])
+    def paren(ctx, tresult):
+        if tresult.value:
+            if tresult.value == "(":
+                _type = "RIGHT_PAREN"
+            elif tresult.value == ")":
+                _type = "RIGHT_PAREND"
+            tresult.token = (tresult.value, _type, tresult.start)
+            return tresult
 
     @regex(r"[+-/*=]")
-    def op(ctx, m):
-        predicate, token = m
-        if not predicate:
-            return False, None
-        if token[0] == "+":
-            _type = "PLUS"
-        elif token[0] == "-":
-            _type = "MINUS"
-        elif token[0] == "*":
-            _type = "TIMES"
-        elif token[0] == "/":
-            _type = "DIVIDE"
-        elif token[0] == "=":
-            _type = "EQUALS"
-        return True, (token[0], _type, token[2])
-
+    def op(ctx, tresult):
+        if tresult.value:
+            if tresult.value == "+":
+                _type = "PLUS"
+            elif tresult.value == "-":
+                _type = "MINUS"
+            elif tresult.value == "*":
+                _type = "TIMES"
+            elif tresult.value == "/":
+                _type = "DIVIDE"
+            elif tresult.value == "=":
+                _type = "EQUALS"
+            tresult.token = (tresult.value, _type, tresult.start)
+            return tresult
 
     @regex(r"[\s\n\r\f\t]")
-    def discard(ctx, m):
-        predicate, token = m
-        if not predicate:
-            return False, None
-        return True, (token[0], None, token[2])
+    def ignore(ctx, tresult):
+        if tresult.value:
+            tresult.token = None
+            return tresult

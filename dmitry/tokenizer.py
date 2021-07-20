@@ -3,20 +3,32 @@ from collections.abc import Iterable
 import heapq
 
 
-class DefaultContext:
+class TResult:
+    def __init__(self, **kwargs):
+        for kw, arg in kwargs.items():
+            self.__setattr__(kw, arg)
+
+
+class DefaultTContext:
     def __init__(self, data=""):
         self.reset(data)
 
     def reset(self, data):
-        self._data = data
-        self._cursor = -1
-        self._len = len(data)
+        if not isinstance(data, Iterable):
+            raise ValueError(f"Data is not of type {type(Iterable)}, {type(data)}.")
+        #
+        self.data = data
+        self.cursor = -1
 
-    def consume(self, steps):
-        self._cursor += steps
+    def result(self, **kwargs):
+        return TResult(**kwargs)
+
+    def consume(self, tresult):
+        # self.cursor = max(self.cursor, tresult.cursor + tresult.length)
+        self.cursor += tresult.length
 
     def __repr__(self):
-        return f"Context({self._data}, {self._cursor}, {self._len})"
+        return f"Context({self.data}, {self.cursor}, {len(self.data)})"
 
 
 class Tokenizer:
@@ -24,15 +36,17 @@ class Tokenizer:
 
     def __init__(self, module=None, context=None):
         if not context:
-            self.ctx = DefaultContext()
+            self.ctx = DefaultTContext()
         #
         self.build_rules(module)
 
     def build_rules(self, module):
         attrs = vars(module)
         self.rules = [
-            (priority, func)  # (_, priority, func)
-            for priority, (_, func) in enumerate(attrs.items())
+            (priority, func)  # (name, priority, func)
+            for priority, func in enumerate(
+                attrs.values()
+            )  # for priority, (name, func) in enumerate(attrs.items())
             if inspect.isroutine(func)
             and not func.__name__.startswith("_")
             and not func.__name__ in Tokenizer.helpers
@@ -40,60 +54,56 @@ class Tokenizer:
         for helper in self.helpers:
             func = attrs.get(helper, None)
             if not inspect.isroutine(func):
+                # TODO: print warning, that valuse of helper names is overwritten to None.
                 self.__setattr__(helper, None)
             self.__setattr__(helper, func)
 
     def feed(self, data):
-        if not isinstance(data, Iterable):
-            raise ValueError(f"Input is not of type <Iterable>, {type(data)}.")
         self.ctx.reset(data)
 
-    def token(self):
-        if self.ctx._cursor < 0:
+    def get_token(self):
+        if self.ctx.cursor < 0:
             if self.soi:
-                predicate, token = self.soi(self._ctx)
-                self.ctx._cursor = 0
-                if predicate and token:
+                tresult = self.soi(self.ctx)
+                self.ctx.consume(tresult)
+                if tresult.token:
                     return token
-            self.ctx._cursor = 0
+            self.ctx.cursor = 0
         #
-        if self.ctx._cursor == self.ctx._len:
+        if self.ctx.cursor == len(self.ctx.data):
             if self.eoi:
-                predicate, token = self.eoi(self._ctx)
-                self.ctx._cursor += 1
-                if predicate and token:
+                tresult = self.eoi(self.ctx)
+                self.ctx.consume(tresult)
+                if tresult.token:
                     return token
-            self.ctx._cursor += 1
+            self.ctx.cursor += 1
             # input has been consumed.
             return None
         #
-        if self.ctx._cursor > self.ctx._len:
+        if self.ctx.cursor > len(self.ctx.data):
             return None
         #
         matches = []
         for (priority, func) in self.rules:
-            predicate, token = func(self.ctx)
-            if predicate:
-                (_value, _type, _cursor) = token
-                heapq.heappush(matches, (-len(_value), priority, token))
+            tresult = func(self.ctx)
+            if tresult:
+                heapq.heappush(matches, (-tresult.length, priority, tresult))
             continue
         #
         if len(matches) > 0:
-            (_, _, token) = heapq.heappop(matches)
-            self.ctx._cursor = token[2]
-            (_value, _type, _cursor) = token
-            print(token)
-            if _type:
-                return token
-            return self.token()
+            (_, _, tresult) = heapq.heappop(matches)
+            self.ctx.consume(tresult)
+            if tresult.token:
+                return tresult.token
+            return self.get_token()
         #
         if self.err:
-            predicate, token = self.err(ctx)
-            if predicate:
-                self.ctx._cursor += 1
-                if token:
-                    return token
-                return self.token()
-
-        token = self.ctx._data[self.ctx._cursor]
-        raise ValueError(f"Unexpected token at {self.ctx._cursor} '{token}'.")
+            tresult = self.err(ctx)
+            if tresult:
+                self.ctx.consume(tresult)
+                if tresult.token:
+                    return tresult.token
+                return self.get_token()
+        #
+        token_value, token_cursor = self.ctx.data[self.ctx.cursor], self.ctx.cursor
+        raise ValueError(f"""Unexpected token "{token_value}" at {token_cursor}.""")

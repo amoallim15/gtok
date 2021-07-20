@@ -1,70 +1,70 @@
-from matchers import regex, custom_1
+from matchers import regex
 
 
 class TRules:
-    @custom_1(r"^(supp)$")
-    def app(ctx, m):
-        predicate, token = m
-        if not predicate:
-            return False, None
-        return True, (token[0], "PROGRAM", token[2])
+    @regex(r"^(supp)$")
+    def app(ctx, tresult):
+        if tresult.value:
+            tresult.length = 1
+            tresult.token = (tresult.value, "PROGRAM", ctx.cursor)
+            return tresult
 
-    @custom_1(r"^(describe)$")
-    def reserved_keywords(ctx, m):
-        predicate, token = m
-        if not predicate:
-            return False, None
-        return True, (token[0], "CMD", token[2])
+    @regex(r"^(describe)$")
+    def reserved_keywords(ctx, tresult):
+        if tresult.value:
+            tresult.length = 1
+            tresult.token = (tresult.value, "CMD", ctx.cursor)
+            return tresult
 
-    @custom_1(r"^(--(version|help|list|args)|-(v|h|l|a))$")
-    def reserved_flag(ctx, m):
-        predicate, token = m
-        if not predicate:
-            return False, None
-        return True, (token[0], "FLAG", token[2])
+    @regex(r"^(--(version|help|list|args)|-(v|h|l|a))$")
+    def reserved_flag(ctx, tresult):
+        if tresult.value:
+            tresult.length = 1
+            tresult.token = (tresult.value, "FLAG", ctx.cursor)
+            return tresult
 
-    @custom_1(r"^--\w+$")
-    def arg_key_flag_type(ctx, m):
-        predicate, token = m
-        if not predicate:
-            return False, None
-        return True, (token[0].strip("-"), "FLAG", token[2])
+    @regex(r"^--\w+$")
+    def arg_key_flag_type(ctx, tresult):
+        if tresult.value:
+            tresult.length = 1
+            tresult.token = (tresult.value.strip("-"), "ARG_KEY_FLAG", ctx.cursor)
+            return tresult
 
-    @custom_1(r"^\w+=\s\S+$")
-    def arg_eq_type(ctx, m):
-        predicate, token = m
-        if not predicate:
-            return False, None
-        return True, (token[0].split("="), "FLAG", token[2])
+    @regex(r"^\w+=\s\S+$")
+    def arg_eq_type(ctx, tresult):
+        if tresult.value:
+            tresult.length = 1
+            tresult.token = (tresult.value.split("="), "ARG_EQ", ctx.cursor)
+            return tresult
 
-    @custom_1(r"^[0-9]+$")
-    def numeric_type(ctx, m):
-        predicate, token = m
-        if not predicate:
-            return False, None
-        return True, (token[0], "NUMERIC", token[2])
+    @regex(r"^[0-9]+$")
+    def numeric_type(ctx, tresult):
+        if tresult.value:
+            tresult.length = 1
+            tresult.token = (int(tresult.value), "NUMERIC", ctx.cursor)
+            return tresult
 
-    @custom_1(r"^(True|False)$")
-    def bolean_type(ctx, m):
-        predicate, token = m
-        if not predicate:
-            return False, None
-        value = False if token[0] == "False" else True
-        return True, (value, "BOOLEAN", token[2])
+    @regex(r"^(True|False)$")
+    def boolean_type(ctx, m):
+        if tresult.value:
+            tresult.length = 1
+            _value = False if tresult.value == "False" else True
+            tresult.token = (_value, "BOOLEAN", ctx.cursor)
+            return tresult
 
-    @custom_1(r"^\w+$")
+    @regex(r"^\w+$")
     def identifier_type(ctx, m):
-        predicate, token = m
-        if not predicate:
-            return False, None
-        return True, (token[0], "IDENTIFIER", token[2])
+        if tresult.value:
+            tresult.length = 1
+            tresult.token = (tresult.value, "IDENTIFIER", ctx.cursor)
+            return tresult
 
-    @custom_1(r"^[\s\S]+$")
+    @regex(r"^[\s\S]+$")
     def string_type(ctx, m):
-        predicate, token = m
-        if not predicate:
-            return False, None
-        return True, (token[0], "STRING", token[2])
+        if tresult.value:
+            tresult.length = 1
+            tresult.token = (tresult.value, "STRING", ctx.cursor)
+            return tresult
 
 
 class PRules:

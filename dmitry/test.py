@@ -6,7 +6,7 @@ from rules2 import TestRules
 def case1():
     tok = Tokenizer(module=TRules)
 
-    data = "supp --help func --args 4 True k=v 'text text' --test"
+    data = "supp --help func describe --args 4 True k=v 'text text' --test"
     tok.feed(data.split(" "))
     while True:
         token = tok.get_token()

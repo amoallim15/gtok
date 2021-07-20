@@ -45,7 +45,7 @@ class TRules:
             return tresult
 
     @regex(r"^(True|False)$")
-    def boolean_type(ctx, m):
+    def boolean_type(ctx, tresult):
         if tresult.value:
             tresult.length = 1
             _value = False if tresult.value == "False" else True
@@ -53,14 +53,14 @@ class TRules:
             return tresult
 
     @regex(r"^\w+$")
-    def identifier_type(ctx, m):
+    def identifier_type(ctx, tresult):
         if tresult.value:
             tresult.length = 1
             tresult.token = (tresult.value, "IDENTIFIER", ctx.cursor)
             return tresult
 
     @regex(r"^[\s\S]+$")
-    def string_type(ctx, m):
+    def string_type(ctx, tresult):
         if tresult.value:
             tresult.length = 1
             tresult.token = (tresult.value, "STRING", ctx.cursor)

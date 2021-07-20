@@ -8,6 +8,10 @@ class TResult:
         for kw, arg in kwargs.items():
             self.__setattr__(kw, arg)
 
+    def __getattr__(self, kw):
+        if kw not in kw:
+            self.__setattr__(kw, None)
+
 
 class TContext:
     def __init__(self, data=""):

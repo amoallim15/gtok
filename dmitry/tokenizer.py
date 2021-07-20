@@ -9,7 +9,7 @@ class TResult:
             self.__setattr__(kw, arg)
 
 
-class DefaultTContext:
+class TContext:
     def __init__(self, data=""):
         self.reset(data)
 
@@ -36,7 +36,7 @@ class Tokenizer:
 
     def __init__(self, module=None, context=None):
         if not context:
-            self.ctx = DefaultTContext()
+            self.ctx = TContext()
         #
         self.build_rules(module)
 

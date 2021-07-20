@@ -18,7 +18,8 @@ class And:
                 arg
             )  # predicate, presult = parser.traverse(arg)
             if not predicate:
-                raise Exception(f"Invalid token {parser.lookahead}")
+                return False
+                # raise Exception(f"Invalid token {parser.lookahead}")
             # presult_list.append(presult)
         return True  # , presult_list
 
@@ -39,7 +40,8 @@ class Or:
             if predicate:
                 # presult_list.append(presult)
                 return True  # , presult_list
-        raise Exception(f"Invalid token {parser.lookahead}")
+        return False
+        # raise Exception(f"Invalid token {parser.lookahead}")
 
 
 class Parser:
@@ -76,7 +78,7 @@ class Parser:
         if not self.lookahead:
             raise Exception("Invalid EOF", grammar)
         #
-        if isinstance(grammar, str):
+        if isinstance(grammar, str): # TODO: 
             if self.lookahead[1].upper() != grammar.upper():
                 return False
             self.lookahead = self.tok.get_token()
@@ -88,9 +90,10 @@ class Parser:
 
 
 class GRules:
-    start = And("SUPP", Or("FLAG", True), "IDENTIFIER", "IDENTIFIER", True)
+    start = And("SUPP", Or(And("FLAG", "FLAG")), "IDENTIFIER", "IDENTIFIER", True)
 
 
+# TODO: and for and other operators have to pass errors to parent operator.
 prs = Parser(TRules, GRules)
-prs.parse("supp fdsd s as".split(" "))
+prs.parse("supp as a".split(" "))
 # print(prs.lookahead)

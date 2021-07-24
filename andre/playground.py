@@ -6,17 +6,23 @@ LOOP = Loop
 NOT = Not
 RAISE = Raise
 
+
 class Rules:
     #
     start = AND(
-                "ALI", 
-                OR(
-                    AND("EMPTY", RAISE("TEST")),
-                    AND("EMPTY", RAISE("HI")),
-                    AND("EMPTY", "EMPTY", RAISE("HI")),
-                labels=["TEST", "HI"]), 
-                "ALI"
-            )
+        "ALI",
+        OR(
+            AND("EMPTY", RAISE("TEST")),
+            AND("EMPTY", RAISE("HI1")),
+            OR(
+                AND("EMPTY", "EMPTY", RAISE("HI2")),
+                AND("EMPTY", "EMPTY", "EMPTY", RAISE("HI3")),
+                labels=["HI2", "HI3"]
+            ),
+            labels=["TEST", "HI1", "HI2", "HI3"],
+        ),
+        "ALI",
+    )
     #
     # labels = {"FATAL"}
     # funcs are:
@@ -40,7 +46,7 @@ class Rules:
 
 #############
 
-data1 = "ali  ali"
+data1 = "ali   ali"
 data2 = "supp --help"
 data3 = ["supp", "func", "True"]
 data4 = ["supp", "--version"]

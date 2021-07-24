@@ -84,8 +84,8 @@ class Raise:
 
 
 def Token(self, token, action):
-        print("TOKEN INPUT    -> GRAMMAR::", token)
-        return action(ctx)
+    print("TOKEN INPUT    -> GRAMMAR::", token)
+    return action(ctx)
 
 
 class PContext:
@@ -96,9 +96,9 @@ class PContext:
 
     def consume(self, steps=1):
         self.cursor += steps
-    
+
     def __repr__(self):
-        return (f"PContext({self.data}, {self.cursor}, {self.len})")
+        return f"PContext({self.data}, {self.cursor}, {self.len})"
 
 
 class Parser:
@@ -118,36 +118,42 @@ class Parser:
                 continue
             self.grammars[name] = value
 
-    def step(self):
-        self.checkpoints.append(self.lookahead)
+    def step(self, checkpoints):
+        checkpoints.append(self.lookahead)
         self.lookahead = self.ctx.cursor
-        print(self.checkpoints)
-        # self.lookahead = self.ctx.cursor
 
-    def backtrack(self):
-        self.lookahead = self.checkpoints.pop()
-        self.ctx.cursor =  self.lookahead
-        print(self.checkpoints)
+    def backtrack(self, checkpoints):
+        if checkpoints:
+            self.lookahead = checkpoints[0]
+            self.ctx.cursor = self.lookahead
 
     def parse(self, data):
         self.ctx = PContext(data)
         self.lookahead = self.ctx.cursor
-        self.step()
+        self.step([])
         return self.traverse(self.grammars["start"])
 
     def traverse(self, grammar):
         predicate, error = False, None
-        print("TRAVERSE INPUT ->", "GRAMMAR::", grammar, f"| TOKEN:: ('{self.ctx.data[self.ctx.cursor]}')")
-        # 
+        checkpoints = []
+        print(
+            "TRAVERSE INPUT ->",
+            "GRAMMAR::",
+            grammar,
+            f"| TOKEN:: ('{self.ctx.data[self.ctx.cursor]}', {self.ctx.cursor})",
+        )
+        #
 
         # 1. check if empty. (True == epsilon)
         if grammar == True:
             return True, None
 
         # 2. check if token.
-        if isinstance(grammar, str) and \
-            grammar == grammar.upper() and \
-            grammar in self.actions.keys():
+        if (
+            isinstance(grammar, str)
+            and grammar == grammar.upper()
+            and grammar in self.actions.keys()
+        ):
             predicate, error = self.actions[grammar](self.ctx)
             print(f"TRAVERSE TOKEN -> ('{error}')")
 
@@ -155,40 +161,34 @@ class Parser:
         if grammar in self.actions.values():
             predicate, error = self.actions[grammar](self)
 
-        if type(grammar) == Raise:
-            return grammar.execute(self)
+        # if type(grammar) == Raise:
+        #     return grammar.execute(self)
         # 4. check if one of the main 5 funcs or an action.
-        if type(grammar) in [Sequence, OrderedChoice, Loop, Not]:            
+        if type(grammar) in [Sequence, OrderedChoice, Loop, Not, Raise]:
             predicate, error = grammar.execute(self)
 
         # 5. lookahead the parser or trackback.
         if predicate:
-            self.step()
-        
+            self.step(checkpoints)
+
         if not predicate and error != "FAILED":
-            self.backtrack()
+            print(checkpoints)
+            self.backtrack(checkpoints)
 
         # 6. handle fatal errors.
         if not predicate and error == "FAILED":
             raise Exception(error)
 
-        print("TRAVERSE OUTPUT ->", "GRAMMAR::", grammar, f"| TOKEN:: ('{self.ctx.data[self.ctx.cursor]}')")
+        print(
+            "TRAVERSE OUTPUT ->",
+            "GRAMMAR::",
+            grammar,
+            f"| TOKEN:: ('{self.ctx.data[self.ctx.cursor]}', {self.ctx.cursor})",
+        )
         return predicate, error
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-# 
-# 
-# 
-# 
+#
+#
+#
+#

@@ -8,7 +8,15 @@ RAISE = Raise
 
 class Rules:
     #
-    start = AND("ali", OR("ali", True))
+    start = AND(
+                "ALI", 
+                OR(
+                    AND("EMPTY", RAISE("TEST")),
+                    AND("EMPTY", RAISE("HI")),
+                    AND("EMPTY", "EMPTY", RAISE("HI")),
+                labels=["TEST", "HI"]), 
+                "ALI"
+            )
     #
     # labels = {"FATAL"}
     # funcs are:
@@ -16,23 +24,23 @@ class Rules:
     # 2. action functions
 
     # token
-    def ali(ctx):
-        test = "ali"
-        for c in test:
+    def ALI(ctx):
+        for c in ["a", "l", "i"]:
             if ctx.data[ctx.cursor] != c:
-                return False, "FAIL"
-            ctx.step()
+                return False, "FAILED"
+            ctx.consume(1)
         return True, "ali"
 
-    def empty(ctx):
+    def EMPTY(ctx):
         if ctx.data[ctx.cursor] != " ":
-            return False, "FAIL"
-        return True, None
+            return False, "FAILED"
+        ctx.consume(1)
+        return True, " "
 
 
 #############
 
-data1 = "ali ali"
+data1 = "ali  ali"
 data2 = "supp --help"
 data3 = ["supp", "func", "True"]
 data4 = ["supp", "--version"]
@@ -40,9 +48,8 @@ data4 = ["supp", "--version"]
 parser = Parser(Rules)
 #
 
-# result = parser.parse(data1)
-print(data4)
-# print(f"""Result is :: "{result}"\n""")
+result = parser.parse(data1)
+print(f"Result is :: {result}\n")
 #
 #
 #

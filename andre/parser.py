@@ -1,5 +1,3 @@
-import inspect
-
 """
 EMPTY
 TERMINAL
@@ -11,10 +9,10 @@ NOT
 THROW
 ACT
 
-1. back tracking algorithm. (concern seperation) [DONE PARTIALLY]
+1. back tracking algorithm. (concern seperation) [DONE]
 2. how to write better grammar. (user friendliness)
 3. how to do packrat. (efficiency concerns)
-4. building abstract syntax tree. (result)
+4. building abstract syntax tree. (result) [DONE]
 """
 
 
@@ -23,12 +21,14 @@ class Sequence:
         self.grammars = grammars
 
     def execute(self, parser):
+        result = []
         print("AND INPUT      -> GRAMMAR::", self.grammars)
         for grm in self.grammars:
-            predicate, error = parser.traverse(grm)
+            predicate, output, error = parser.traverse(grm, is_raise=False)
             if not predicate:
-                return (False, error)
-        return (True, None)
+                return (False, result, error)
+            result.append(output)
+        return (True, result, None)
 
 
 class OrderedChoice:
@@ -38,14 +38,14 @@ class OrderedChoice:
 
     def execute(self, parser):
         print("OR INPUT       -> GRAMMAR::", self.grammars)
-        error = None
+        result, error = None, None
         for grm in self.grammars:
-            predicate, error = parser.traverse(grm)
+            predicate, result, error = parser.traverse(grm, is_raise=False)
             if predicate:
-                return (True, None)
+                return (True, result, None)
             if error not in self.labels:
                 break
-        return (False, error)
+        return (False, result, error)
 
 
 class Loop:
@@ -54,12 +54,14 @@ class Loop:
 
     def execute(self, parser):
         print("LOOP INPUT     -> GRAMMAR::", self.grammar)
+        result = []
         while True:
-            predicate, error = parser.traverse(self.grammar)
+            predicate, output, error = parser.traverse(self.grammar, is_raise=False)
             if not predicate:
-                if error == "FAILED":
-                    return (True, None)
-                return (False, error)
+                if error == "FAILED" and len(result) > 0:
+                    return (True, result, None)
+                return (False, result, error)
+            result.append(output)
 
 
 class Not:
@@ -68,10 +70,10 @@ class Not:
 
     def execute(self, parser):
         print("NOT INPUT      -> GRAMMAR::", self.grammar)
-        predicate, error = parser.traverse(self.grammar)
+        predicate, result, error = parser.traverse(self.grammar, is_raise=False)
         if error == "FAILED":
-            return (True, None)
-        return (False, error)
+            return (True, result, None)
+        return (False, None, error)
 
 
 class Raise:
@@ -80,12 +82,7 @@ class Raise:
 
     def execute(self, parser):
         print("RAISE INPUT    -> GRAMMAR::", self.label)
-        return (False, self.label)
-
-
-def Token(self, token, action):
-    print("TOKEN INPUT    -> GRAMMAR::", token)
-    return action(ctx)
+        return (False, None, self.label)
 
 
 class PContext:
@@ -104,7 +101,6 @@ class PContext:
 class Parser:
     def __init__(self, module):
         self.build(module)
-        self.checkpoints = []
 
     def build(self, module):
         attrs = vars(module)
@@ -113,82 +109,55 @@ class Parser:
         for (name, value) in attrs.items():
             if name.startswith("_"):
                 continue
-            if inspect.isroutine(value):
+            if callable(value):
                 self.actions[name] = value
                 continue
             self.grammars[name] = value
 
-    def step(self, checkpoints):
-        checkpoints.append(self.lookahead)
+    def step(self):
         self.lookahead = self.ctx.cursor
 
-    def backtrack(self, checkpoints):
-        if checkpoints:
-            self.lookahead = checkpoints[0]
-            self.ctx.cursor = self.lookahead
+    def backtrack(self, lookahead):
+        self.lookahead = self.ctx.cursor = lookahead
 
     def parse(self, data):
         self.ctx = PContext(data)
         self.lookahead = self.ctx.cursor
-        self.step([])
-        return self.traverse(self.grammars["start"])
+        self.step()
+        return self.traverse(self.grammars["start"], True)
 
-    def traverse(self, grammar):
-        predicate, error = False, None
-        checkpoints = []
-        print(
-            "TRAVERSE INPUT ->",
-            "GRAMMAR::",
-            grammar,
-            f"| TOKEN:: ('{self.ctx.data[self.ctx.cursor]}', {self.ctx.cursor})",
-        )
-        #
-
-        # 1. check if empty. (True == epsilon)
-        if grammar == True:
-            return True, None
-
-        # 2. check if token.
-        if (
-            isinstance(grammar, str)
-            and grammar == grammar.upper()
-            and grammar in self.actions.keys()
-        ):
-            predicate, error = self.actions[grammar](self.ctx)
-            print(f"TRAVERSE TOKEN -> ('{error}')")
-
-        # 3. check if an action
-        if grammar in self.actions.values():
-            predicate, error = self.actions[grammar](self)
-
-        # if type(grammar) == Raise:
-        #     return grammar.execute(self)
-        # 4. check if one of the main 5 funcs or an action.
+    def traverse(self, grammar, is_raise=True):
+        predicate, result, error, lookahead = False, None, None, self.lookahead
+        # empty
+        if isinstance(grammar, bool) and grammar == True:
+            predicate, result, error = bool, None, None
+        # terminal or literal
+        if isinstance(grammar, str):
+            try:
+                # token
+                if grammar == grammar.upper() and grammar in self.actions.keys():
+                    predicate, result, error = self.actions[grammar](self.ctx)
+                # literal
+                else:
+                    pass
+                # if eof
+            except IndexError:
+                raise Exception("Unexpected EOF.")
+        # action
+        if callable(grammar) and grammar in self.actions.values():
+            predicate, result, error = grammar(self)
+        # buildin funcs
         if type(grammar) in [Sequence, OrderedChoice, Loop, Not, Raise]:
-            predicate, error = grammar.execute(self)
-
-        # 5. lookahead the parser or trackback.
+            predicate, result, error = grammar.execute(self)
+        #
         if predicate:
-            self.step(checkpoints)
-
+            self.step()
+        #
         if not predicate and error != "FAILED":
-            print(checkpoints)
-            self.backtrack(checkpoints)
-
-        # 6. handle fatal errors.
-        if not predicate and error == "FAILED":
-            raise Exception(error)
-
-        print(
-            "TRAVERSE OUTPUT ->",
-            "GRAMMAR::",
-            grammar,
-            f"| TOKEN:: ('{self.ctx.data[self.ctx.cursor]}', {self.ctx.cursor})",
-        )
-        return predicate, error
-
-
-#
-#
-#
-#
+            self.backtrack(lookahead)
+        #
+        if not predicate and error == "FAILED" and is_raise:
+            print(predicate, result, error)
+            raise Exception("FAILED")
+        #
+        return predicate, result, error

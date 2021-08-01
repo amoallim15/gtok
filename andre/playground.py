@@ -10,18 +10,8 @@ RAISE = Raise
 class Rules:
     #
     start = AND(
-        "ALI",
-        OR(
-            AND("EMPTY", RAISE("TEST")),
-            AND("EMPTY", RAISE("HI1")),
-            OR(
-                AND("EMPTY", "EMPTY", RAISE("HI2")),
-                AND("EMPTY", "EMPTY", "EMPTY", RAISE("HI3")),
-                labels=["HI2", "HI3"]
-            ),
-            labels=["TEST", "HI1", "HI2", "HI3"],
-        ),
-        "ALI",
+        LOOP("ALI"),
+        LOOP("EMPTY"),
     )
     #
     # labels = {"FATAL"}
@@ -33,20 +23,20 @@ class Rules:
     def ALI(ctx):
         for c in ["a", "l", "i"]:
             if ctx.data[ctx.cursor] != c:
-                return False, "FAILED"
+                return False, None, "FAILED"
             ctx.consume(1)
-        return True, "ali"
+        return True, "ali", None
 
     def EMPTY(ctx):
         if ctx.data[ctx.cursor] != " ":
-            return False, "FAILED"
+            return False, None, "FAILED"
         ctx.consume(1)
-        return True, " "
+        return True, " ", None
 
 
 #############
 
-data1 = "ali   ali"
+data1 = "aliali t"
 data2 = "supp --help"
 data3 = ["supp", "func", "True"]
 data4 = ["supp", "--version"]
